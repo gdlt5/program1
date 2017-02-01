@@ -112,7 +112,7 @@ private void writeHTTPHeader(OutputStream os, String contentType, String locatio
    df.setTimeZone(TimeZone.getTimeZone("GMT"));
 
    File x = new File(location);
-
+   //determine if file exists
    if(x.exists() && !x.isDirectory()){
       os.write("HTTP/1.1 200 OK\n".getBytes());
       os.write("Date: ".getBytes());
@@ -127,6 +127,7 @@ private void writeHTTPHeader(OutputStream os, String contentType, String locatio
       os.write("\n\n".getBytes()); // HTTP header ends with 2 newlines
       
    }
+   //if file does not exist, change status
    else{
       os.write("HTTP/1.1 404 Not Found\n".getBytes());   
       os.write("Date: ".getBytes());
