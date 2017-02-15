@@ -20,6 +20,8 @@
 *
 **/
 
+
+import java.nio.file.Files;
 import java.net.Socket;
 import java.lang.Runnable;
 import java.io.*;
@@ -32,6 +34,7 @@ public class WebWorker implements Runnable
 {
 
 private Socket socket;
+String format;
 
 /**
 * Constructor: must have a valid open socket
@@ -57,8 +60,15 @@ public void run()
       //Retrieve User Requested URL for later methods.
       String location;
       location = readHTTPRequest(is);
-
-      writeHTTPHeader(os,"text/html", location);
+      if(location.endsWith(".jpg"))
+         format = "image/jpg";
+      else if (location.endsWith(".gif"))
+         format = "image/gif";
+      else if(location.endsWith(".png"))
+         format = "image/png";
+      else
+         format = "text/html";
+      writeHTTPHeader(os,format, location);
       writeContent(os, location);
       os.flush();
       socket.close();
@@ -110,7 +120,6 @@ private void writeHTTPHeader(OutputStream os, String contentType, String locatio
    Date d = new Date();
    DateFormat df = DateFormat.getDateTimeInstance();
    df.setTimeZone(TimeZone.getTimeZone("GMT"));
-
    File x = new File(location);
    //determine if file exists
    if(x.exists() && !x.isDirectory()){
@@ -153,8 +162,6 @@ private void writeContent(OutputStream os, String location) throws Exception
 {
    //Remove file directory "/" from beginning
    location = location.substring(1);
-   
- 
    File x = new File(location);
 
    //Determine if file exists at given location
@@ -162,24 +169,29 @@ private void writeContent(OutputStream os, String location) throws Exception
    if(x.exists() && !x.isDirectory()){
       FileInputStream stream = new FileInputStream(location);
       BufferedReader r = new BufferedReader(new InputStreamReader(stream));
-
-      String filex;
-      //Reading file
-      while ((filex = r.readLine()) != null){
-         //Check for <cs371date> tag & replace
-         if(filex.equals("<cs371date>")){
-            SimpleDateFormat dateForm = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
-            Date specific = new Date();
-            String finalDate = dateForm.format(specific);
-            os.write(finalDate.getBytes()); 
-         }
-         //Check for <cs371server> tag & replace
-         if(filex.equals("<cs371server>")){
-            os.write("Greg's Server.".getBytes()); 
-         }
-         os.write(filex.getBytes());
+    
+      if(format.startsWith("image/"))
+         Files.copy(x.toPath(), os);
+         
+      else{
+	  String filex;
+	  //Reading file
+	  while ((filex = r.readLine()) != null){
+	    //Check for <cs371date> tag & replace
+	    if(filex.equals("<cs371date>")){
+		SimpleDateFormat dateForm = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
+		Date specific = new Date();
+		String finalDate = dateForm.format(specific);
+		os.write(finalDate.getBytes()); 
+	    }
+	    //Check for <cs371server> tag & replace
+	    if(filex.equals("<cs371server>")){
+		os.write("Greg's Server.".getBytes()); 
+	    }
+	    os.write(filex.getBytes());
+	  }
+	  r.close();
       }
-      r.close();
    }
    //else if file does not exist, display "404 Error"
    else{
