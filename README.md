@@ -1,2 +1,2 @@
 # program1
-Repository for program1
+Repository for CS371 - Program 1
